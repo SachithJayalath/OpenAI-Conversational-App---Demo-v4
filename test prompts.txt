@@ -1,0 +1,1 @@
+2/ If user has asked for list of things filter all the records of the given csv file and generate a new seperate csv file in the name of "relevant_records". In the response message mention about this.
