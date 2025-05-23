@@ -24,7 +24,7 @@ client = OpenAI()
 
 thinking_model = "o4-mini-2025-04-16"
 # conversational_model = "o4-mini-2025-04-16"
-conversational_model = "gpt-4o-mini-2024-07-18"
+conversational_model = "gpt-4.1-mini-2025-04-14"
 
 template_thinking_model = """
 You are a middle AI agent who works in the middle of a powerplant company and their conversatonal AI who is the end face who will report this insights to the user in natural language.
@@ -57,16 +57,18 @@ prompt_da = """
 You are a middle AI agent who works in the middle of a powerplant company and their conversatonal AI who is the end face who will report this insights to the user in natural language.
 I will share the ground level report of the account balances for the month october of the year 2024 in comparison with september 2024 of the powerplant company and the user's message. You will follow ALL of the rules below:
 
-1/ You should check and return all the data in text if it is necessary to answer the user's message.The column Analytical_Code_D is the unique dimension that you need to use to return. Always start with the analytical code number in that value and then next the name and other details.
+1/ You should ALWAYS generate and return a new seperate csv file in the name of "relevant_records" including ALL! of the records that are related tothe user's query. (this should all. each and everyone of them. use code intepreter with filtering) for each of these questions seperate to the response you return. When generating this csv carefully consider what the user requires from his question and include as much as columns to support this question. You do not need to mention about this in the response.
+Make sure to name the columns in meaningful names with out any special characters or merged words like sumOfCurrentMonth or Anlyitical_code_D, use "Sum of October", "Anlytical Code" etc.
+Also you can seperate the "Analytical_Code_D" column into two columns one being the "Analytical Code" and the second one being the "Analytical Code Name", seperating from the frist "-" character after the code number. Ex. "22192/0000 - VAT Accruals" should be "22192/0000" and "VAT Accruals" in seperate two columns.
+
+2/ You should always sum the group of records that user is asking to give the precise "total" and other comparison calculations (use python for calculations) with the budget or the previous month if necessary. Non related to the user's question you should always return a summary with these calculations and insights.
+You should never return guides or instructions to do calcualtions. You should always return the final results in number. Other than the summary and calculations you don't need to return anything. The other part of detail report will be covered by the conversational AI agent. Stop the response after the summary and calculations.
+The column Analytical_Code_D is the unique dimension that you need to use to return. Always start with the analytical code number in that value and then next the name and other details.
 The column SumOfCurrentMonth is the fact of each of these reocrds which you should consider as the actual value of the record. SumOfPreviousMonth is the fact of the previous month which is september 2024. Since you have the data of the previous month you may also answer user's questions regarding the september 2024 period as well.
 when filtering out related data consider the following two types and act accordingly;
 
-Type I - When asked for assests, liabilities or current, non current values use the column 'account grouping' to filter the records necessary.
-Type II - When asked for other specific things like staff costs, interests, long term loans, etc. use the column 'FS_Category' to filter the records necessary.
-
-2/ IF the question is relevant you should ALWAYS generate and return a new seperate csv file in the name of "relevant_records" for each of these questions seperate to the response you return. When generating this csv carefully consider what the user requires from his question and include as much as columns to support this question. You do not need to mention about this in the response.
-Make sure to name the columns in meaningful names with out any special characters or merged words like sumOfCurrentMonth or Anlyitical_code_D, use "Sum of October", "Anlytical Code" etc.
-Also you can seperate the "Analytical_Code_D" column into two columns one being the "Analytical Code" and the second one being the "Analytical Code Name", seperating from the frist "-" character after the code number. Ex. "22192/0000 - VAT Accruals" should be "22192/0000" and "VAT Accruals" in seperate two columns.
+Type I - When asked for current assests, non current assets, current liabilities, non current liabilitites, or equity values use the column 'account grouping' to filter the records necessary.
+Type II - When asked for any other specific things like staff costs, interests, long term loans, etc. always use the column 'FS_Category' to filter the records necessary.
 
 3/ You should analyse or do any necessary calculations and return them as well but very precisely menetioning what this exact value means.
 
@@ -146,6 +148,54 @@ This was the response given by the middle AI agent to going through the ground l
 Here is the brief of the powerplant company and the domain knowledge of the company. Do not give text straight from this just only understand this an explain as an conversational assistant ; {acwa_company_brief}
 """
 
+template_conversation_model_w_data = """
+You are a conversational AI assistant who works with structered data of a powerplant company and report insights in natural language to the users, who will be the management level of the company.
+I will share the relevant data that I got filtered from a ground level report of the powerplant company only regarding the month october of 2024 which was generated by a middle thiking AI agent [You should never expose about this thinking model to the user], and you will follow ALL of the rules below:
+
+1/ You should always be conversational and friendly as you are handling the end user who is the management level of the company directly. But do not greet unnecessarily in the start go staright to the point.
+
+2/ You SHOULD RESPOND UNTIL THE USER ASKED RESULT IS COMPLETED. Give at least 10000 words of response or until every detail user has asked is completely answered.
+
+3/ The given analytical code number which is the number that starts each record is a unique dimension that you need to return. Always start with that number in that value and then next the name and other details.
+The categeories which you may find grouped are the topics that you should return in response and list down the records under of the each record. You need to do this only if the categories or topics are mentioned in the given related data that you are.
+
+4/ If you get the response "IRRELEVANT" from the middle AI agent that means the middle agent has decided that the user's message is completely irrelevant to the given report or the data.
+In this case explain to the user that the message is irrelevant and you are not able to provide any insights or information regarding this message as you only have access to the financial data of the october 2024 and the compared data of the previous month and the previous year to that period but the user's message also can be on the company or the domain knowledge if so that becomes an exception.
+If the user's message is also irrelevant to any of this two and nothing related to the topic, then just simply tell the user that you are unable to help with this and refer him other cloud based, popular AI tools which can help him with this if that is relevant for the user's message.
+
+5/ If you are giving a summary of something, like a total amount of a certain category that user specify, give a total amount or the sum that user has asked first but in this case give some key break down of which sub categories you used WITH NUMBERS related to the each category here secondly. giving numbers in this breakdown is really important if there is any.
+If this happenes also try to give the percentage in number next to the actual number as well. But if this breakdown goes very long in context give atleast 5 to 6 points and say etc in natural language.
+
+6/ Strictly adhere to the below given format. Give the results in sub topics (categories) using the "Account Name" column when the user's message is asking for a list of things but only for the topic as in you still need to return all the each list of items and requested details in the analytical code and the code name as mentioned in the rule 01 but topic them in categories by sub-topics. Don't include this in the records, only use them on top as topics and list down the analytical code number and names under that.
+You only need to do this when the user asked list of things can be categorized using the "Account Name" column.
+Here is a sample format of the output you should return as you can get all of this details form the given related data below;
+
+accout name 01
+
+22192/0000 - analytical code name 01: 20,000,000.00 - budget 80.00 %
+\n22193/0000 - analytical code name 02: 350,000,000.00 - budget 44.00 % 
+\n22194/0000 - analytical code name 03: 45,000,000.00 - budget 60.00 %
+\n22195/0000 - analytical code name 04: 255,000,000.00 - budget 20.00 %
+
+accout name 02
+
+22196/0000 - analytical code name 05: 206,000,000.00 - budget 99.00 %
+\n22197/0000 - analytical code name 06: 80,000,000.00 - budget 12.00 %
+\n22198/0000 - analytical code name 07: 99,000,000.00 - budget 6.00 %
+\n22199/0000 - analytical code name 08: 1,000,000.00 - budget 35.00 %
+
+*notice that the analytical code name and budget variance percentage is not in square brakcets you should not return them in square brakcets just give it in the sample format only unless the user asks for a different format, when given the relevant data it has only given as that for the ease of identifying, and th subtopic numbers in brakcets are also unncessary in the final result but make the account name a sub topic for each of the category.
+always write every record in a new line and do not merge them in one line. You need to keep a proper structure int eh response for the user to understand.
+
+This was the response given by the middle AI agent to going through the ground level data of the company. You should use the totals and calculations provided in this reponse for the final reponse. This also includes relevant data from the ground level report. This was generated by a middle thinking AI agent [You should never expose about this thinking model to the user]:
+{middle_agent_response}
+
+*This may include csv file path or download link or advise to check the generated csv. You should always ignore these lines as they won't be passed on to the user.
+
+Here is the generated related data. Only use this data to brief down the response as the format given in the rule 07. Do not do any calculations or other analysis on this for that ALWAYS refer to the middle agent's reponse that's it;
+{output_file_string}
+"""
+
 # The fucntion to filloiut the templates with values
 
 def fill_template(template: str, context: dict) -> str:
@@ -210,7 +260,7 @@ def generate_data_assistant_response(message):
     response = "None returned"
     output_file_id = None
 
-    print(messages.data)
+    # print(messages.data)
 
     # 8️⃣ Print the assistant responses
     for msg in messages.data[::-1]:  # reverse the order
@@ -256,6 +306,21 @@ def generate_response_for_convo(message, middle_agent_response):
             {"role": "system", "content": prompt_co},
             {"role": "user", "content": message}
                 ],
+        stream=True
+        )
+    return responseStream
+
+def generate_response_for_convo_w_data(message, middle_agent_response, output_file_string):
+    prompt_co = fill_template(template_conversation_model_w_data, {"middle_agent_response":middle_agent_response, "output_file_string": output_file_string})
+    # print(prompt_co)
+    responseStream = client.chat.completions.create(
+        model=conversational_model,
+        messages=[
+            {"role": "system", "content": prompt_co},
+            {"role": "user", "content": message}
+                ],
+        max_tokens=4096,
+        temperature=0.5,
         stream=True
         )
     return responseStream
@@ -363,7 +428,12 @@ def main():
                 #     file.write(output_file_bytes)
                 # print("Output file downloaded as output.csv")
 
-            result_co_stream = generate_response_for_convo(message, result_da)
+            try:
+                result_co_stream = generate_response_for_convo_w_data(message, result_da, output_file_string)
+            except Exception as e:
+                st.error(e,"Input token exceeded error: The input is too large for the model. Please try a shorter or simpler query.")
+                result_co_stream = generate_response_for_convo(message, result_da)
+                return
 
             for chunk in result_co_stream:
                 if chunk.choices[0].delta.content:

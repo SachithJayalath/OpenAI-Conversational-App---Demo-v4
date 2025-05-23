@@ -1,11 +1,29 @@
-import streamlit as st
+from openai import OpenAI
 
-st.bar_chart({"data": [1, 5, 2, 6, 2, 1]})
+client = OpenAI()
 
-expander = st.expander("See explanation")
-expander.write('''
-    The chart above shows some numbers I picked for you.
-    I rolled actual dice for these, so they're *guaranteed* to
-    be random.
-''')
-expander.image("https://static.streamlit.io/examples/dice.jpg")
+file = client.files.create(
+    file=open("gl-report-24-october-budget-and-comp.csv", "rb"),
+    purpose="user_data"
+)
+
+response = client.responses.create(
+    model="gpt-4.1",
+    input=[
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "input_file",
+                    "file_id": file.id,
+                },
+                {
+                    "type": "input_text",
+                    "text": "what is the total of staff expenses in the given file. Give me a breakdown on it",
+                },
+            ]
+        }
+    ]
+)
+
+print(response.output_text)
