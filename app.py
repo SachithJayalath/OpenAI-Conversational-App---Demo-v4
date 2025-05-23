@@ -24,7 +24,7 @@ client = OpenAI()
 
 thinking_model = "o4-mini-2025-04-16"
 # conversational_model = "o4-mini-2025-04-16"
-conversational_model = "gpt-4.1-mini-2025-04-14"
+conversational_model = "gpt-4o-mini-2024-07-18"
 
 template_thinking_model = """
 You are a middle AI agent who works in the middle of a powerplant company and their conversatonal AI who is the end face who will report this insights to the user in natural language.
@@ -57,11 +57,12 @@ prompt_da = """
 You are a middle AI agent who works in the middle of a powerplant company and their conversatonal AI who is the end face who will report this insights to the user in natural language.
 I will share the ground level report of the account balances for the month october of the year 2024 in comparison with september 2024 of the powerplant company and the user's message. You will follow ALL of the rules below:
 
-1/ You should ALWAYS generate and return a new seperate csv file in the name of "relevant_records" including ALL! of the records that are related tothe user's query. (this should all. each and everyone of them. use code intepreter with filtering) for each of these questions seperate to the response you return. When generating this csv carefully consider what the user requires from his question and include as much as columns to support this question. You do not need to mention about this in the response.
+1/ You should ALWAYS generate and return a new seperate csv file in the name of "relevant_records" including ALL! of the records that are related tothe user's query (this should be all. each and everyone of them. use code intepreter with filtering) for each of these questions seperate to the response you return. When generating this csv carefully consider what the user requires from his question and include as much as columns to support this question. You do not need to mention about this in the response.
 Make sure to name the columns in meaningful names with out any special characters or merged words like sumOfCurrentMonth or Anlyitical_code_D, use "Sum of October", "Anlytical Code" etc.
 Also you can seperate the "Analytical_Code_D" column into two columns one being the "Analytical Code" and the second one being the "Analytical Code Name", seperating from the frist "-" character after the code number. Ex. "22192/0000 - VAT Accruals" should be "22192/0000" and "VAT Accruals" in seperate two columns.
+This is the main task you need to do as PIRORITY 01
 
-2/ You should always sum the group of records that user is asking to give the precise "total" and other comparison calculations (use python for calculations) with the budget or the previous month if necessary. Non related to the user's question you should always return a summary with these calculations and insights.
+2/ Then you should always sum the group of records that user is asking to give the precise "total" and other comparison calculations (use python for calculations) with the budget or the previous month if necessary. Non related to the user's question you should always return a summary with these calculations and insights.
 You should never return guides or instructions to do calcualtions. You should always return the final results in number. Other than the summary and calculations you don't need to return anything. The other part of detail report will be covered by the conversational AI agent. Stop the response after the summary and calculations.
 The column Analytical_Code_D is the unique dimension that you need to use to return. Always start with the analytical code number in that value and then next the name and other details.
 The column SumOfCurrentMonth is the fact of each of these reocrds which you should consider as the actual value of the record. SumOfPreviousMonth is the fact of the previous month which is september 2024. Since you have the data of the previous month you may also answer user's questions regarding the september 2024 period as well.
@@ -214,7 +215,7 @@ def generate_data_assistant_response(message):
     # 1️⃣ Create an assistant with the code interpreter tool
     assistant = client.beta.assistants.create(
         name="Data Assistant",
-        model="gpt-4o-mini",
+        model="gpt-4o-mini-2024-07-18",
         instructions=prompt_da,
         tools=[{"type": "code_interpreter"}],
         tool_resources={
@@ -260,7 +261,7 @@ def generate_data_assistant_response(message):
     response = "None returned"
     output_file_id = None
 
-    # print(messages.data)
+    print(messages.data)
 
     # 8️⃣ Print the assistant responses
     for msg in messages.data[::-1]:  # reverse the order
@@ -268,6 +269,9 @@ def generate_data_assistant_response(message):
             # Content can be a list of parts; extract text accordingly
             response = "".join(part.text.value for part in msg.content)
             print("\nAssistant:", response)
+            if output_file_id is None:
+                for attachment in msg.attachments:
+                    output_file_id = attachment.file_id
         if msg.role == "user":
            # Content can be a list of parts; extract text accordingly
             text = "".join(part.text.value for part in msg.content)
@@ -275,8 +279,6 @@ def generate_data_assistant_response(message):
         if msg.role == "system":
             # Content can be a list of parts; extract text accordingly
             print("\nSystem: system instructions")
-        for attachment in msg.attachments:
-            output_file_id = attachment.file_id
     
     return response, output_file_id
 
