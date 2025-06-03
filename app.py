@@ -72,7 +72,7 @@ when filtering out related data consider the following two types and act accordi
 Type I - When asked for current assests, non current assets, current liabilities, non current liabilitites, or equity values use the column 'account grouping' to filter the records necessary.
 Type II - When asked for any other specific things like staff costs, interests, long term loans, etc. always use the column 'FS_Category' to filter the records necessary.
 
-When asked for sepecific names like "staff costs" which exists in the FS_Category you should only return that records for that given name. Nothing related to that or close to that name should be returned.
+When asked for sepecific names like which exists in the FS_Category you should only return that records for that given name. Nothing related to that or close to that name should be returned. For example if user has asked for "Staff Costs" then you should only return the records which has "Staff Costs" in the FS_Category column do not return - "Staff Insurance", "Seconded Staff Cost and allocations", etc.
 
 3/ You should analyse or do any necessary calculations and return them as well but very precisely menetioning what this exact value means.
 
