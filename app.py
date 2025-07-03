@@ -366,9 +366,10 @@ def main():
         st.session_state["show_result"] = False
 
     st.set_page_config(
-        page_title="ACWA Conversational Assistant :satellite::milky_way:", page_icon=":milky_way:")
+        page_title="Conversational Assistant :satellite::milky_way:", page_icon=":milky_way:")
 
-    st.header("ACWA Power :satellite::milky_way:")
+    # st.header("ACWA Power :satellite::milky_way:")
+    st.header("Ask BI Solution by Altria :satellite::milky_way:")
 
     if "message" not in st.session_state:
         st.session_state["message"] = ""
